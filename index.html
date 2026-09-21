@@ -1,8 +1,64 @@
-<html>
-  <head>
-    <title>Pusat Informasi Warga RT.07 Bangetayu Wetan</title>
-  </head>
-  <body>
-    informasi seputar warga RT.07
-  </body>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data dari Google Sheets</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background-color: #f9f9f9; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background-color: #2c3e50; color: white; }
+    </style>
+</head>
+<body>
+
+    <h2>Daftar Data Google Sheets</h2>
+    <div id="loading">Memuat data...</div>
+    <table id="tabel-data" style="display:none;">
+        <thead>
+            <tr id="header-tabel"></tr>
+        </thead>
+        <tbody id="isi-tabel"></tbody>
+    </table>
+
+    <script>
+        // ganti URL di bawah dengan URL CSV publikasi Google Sheets kamu
+        const urlCSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSNBYxoQoiVWQRaeneouLhb9f1FZDdZU9rc_47vPIfWmjkqXxRuBiCwYIyCN5nJvr_FZTqPZCC02eyn/pub?gid=0&single=true&output=csv';
+
+        fetch(urlCSV)
+            .then(response => response.text())
+            .then(csvText => {
+                const rows = csvText.trim().split('\n').map(row => row.split(','));
+                
+                // Ambil Header (Baris Pertama)
+                const headers = rows[0];
+                const headerRow = document.getElementById('header-tabel');
+                headers.forEach(h => {
+                    const th = document.createElement('th');
+                    th.textContent = h.trim();
+                    headerRow.appendChild(th);
+                });
+
+                // Ambil Isi Data (Baris Kedua dst)
+                const tbody = document.getElementById('isi-tabel');
+                for (let i = 1; i < rows.length; i++) {
+                    const tr = document.createElement('tr');
+                    rows[i].forEach(cell => {
+                        const td = document.createElement('td');
+                        td.textContent = cell.trim();
+                        tr.appendChild(td);
+                    });
+                    tbody.appendChild(tr);
+                }
+
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('tabel-data').style.display = 'table';
+            })
+            .catch(err => {
+                document.getElementById('loading').innerText = 'Gagal memuat data dari Google Sheets.';
+                console.error(err);
+            });
+    </script>
+</body>
 </html>
