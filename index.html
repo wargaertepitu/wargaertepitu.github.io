@@ -2,82 +2,143 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Tabel Data Google Sheets</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tabel Data Google Sheets Responsive</title>
     <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 15px;
+            background-color: #f8f9fa;
+            color: #333;
+        }
+
+        /* Container Tabel Agar Responsive (Scroll Horizontal di HP) */
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 10px;
-        }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
-        }
-        th {
-            background-color: #f2f2f2;
-        }
-        .btn-view {
-            color: #007bff;
-            cursor: pointer;
-            text-decoration: underline;
-            border: none;
-            background: none;
-            padding: 0;
-            font-size: inherit;
-        }
-        .btn-view:hover {
-            color: #0056b3;
+            min-width: 600px; /* Menjaga struktur tabel tetap rapi saat di-scroll di HP */
         }
 
-        /* Styling Modal Gambar */
+        th, td {
+            border: 1px solid #e0e0e0;
+            padding: 10px 12px;
+            text-align: left;
+            font-size: 14px;
+        }
+
+        th {
+            background-color: #f1f3f5;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        /* Styling Tombol Aksi */
+        .btn-view {
+            display: inline-block;
+            background-color: #0d6efd;
+            color: #fff;
+            padding: 6px 12px;
+            font-size: 13px;
+            font-weight: 500;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background-color 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .btn-view:hover {
+            background-color: #0b5ed7;
+        }
+
+        /* Modal Responsif */
         .modal {
             display: none; 
             position: fixed; 
             z-index: 1000; 
-            padding-top: 50px; 
             left: 0;
             top: 0;
             width: 100%; 
             height: 100%; 
             overflow: auto; 
-            background-color: rgba(0,0,0,0.8); 
+            background-color: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(3px);
         }
+
+        .modal-body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100%;
+            padding: 20px;
+        }
+
         .modal-content {
-            margin: auto;
-            display: block;
-            max-width: 80%;
-            max-height: 80vh;
+            max-width: 95%;
+            max-height: 85vh;
+            object-fit: contain;
             border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
         }
+
         .close-modal {
             position: absolute;
             top: 15px;
-            right: 35px;
-            color: #f1f1f1;
-            font-size: 40px;
+            right: 20px;
+            color: #ffffff;
+            font-size: 32px;
             font-weight: bold;
             cursor: pointer;
+            line-height: 1;
+            padding: 5px 10px;
+            user-select: none;
         }
+
         .close-modal:hover {
-            color: #bbb;
+            color: #cccccc;
+        }
+
+        /* Pesan Loading */
+        #loading {
+            padding: 15px;
+            font-size: 14px;
+            color: #666;
         }
     </style>
 </head>
 <body>
 
-    <div id="loading">Memuat data...</div>
-    <table id="tabel-data" style="display:none;">
-        <thead>
-            <tr id="header-tabel"></tr>
-        </thead>
-        <tbody id="isi-tabel"></tbody>
-    </table>
+    <div id="loading">Memuat data dari Google Sheets...</div>
+
+    <!-- Wrapper Pembungkus Tabel -->
+    <div class="table-container" id="container-tabel" style="display:none;">
+        <table id="tabel-data">
+            <thead>
+                <tr id="header-tabel"></tr>
+            </thead>
+            <tbody id="isi-tabel"></tbody>
+        </table>
+    </div>
 
     <!-- Modal Pop-up Gambar -->
     <div id="imageModal" class="modal">
         <span class="close-modal" onclick="closeModal()">&times;</span>
-        <img class="modal-content" id="imgModalTarget" alt="Pratinjau Gambar">
+        <div class="modal-body">
+            <img class="modal-content" id="imgModalTarget" alt="Pratinjau Gambar">
+        </div>
     </div>
 
     <script>
@@ -88,7 +149,7 @@
             .then(csvText => {
                 const rows = csvText.trim().split('\n').map(row => row.split(','));
                 
-                // 1. Ambil Header & Tambahkan Header Kolom Aksi di Paling Kanan
+                // 1. Header Tabel & Tambah Kolom Aksi
                 const headers = rows[0];
                 const headerRow = document.getElementById('header-tabel');
                 headers.forEach(h => {
@@ -97,29 +158,24 @@
                     headerRow.appendChild(th);
                 });
 
-                // Tambah Header Kolom Aksi
                 const thAction = document.createElement('th');
                 thAction.textContent = 'Gambar';
                 headerRow.appendChild(thAction);
 
-                // 2. Ambil Isi Data
+                // 2. Isi Data Tabel
                 const tbody = document.getElementById('isi-tabel');
                 for (let i = 1; i < rows.length; i++) {
                     const tr = document.createElement('tr');
                     const rowData = rows[i];
 
-                    // Tampilkan data kolom bawaan
+                    // Masukkan isi sel
                     rowData.forEach(cell => {
                         const td = document.createElement('td');
                         td.textContent = cell.trim();
                         tr.appendChild(td);
                     });
 
-                    // 3. Tentukan URL Gambar
-                    // Opsi A: Jika URL gambar ada di salah satu kolom CSV (misal kolom indeks ke-2 / kolom ke-3)
-                    // const imageUrl = rowData[2] ? rowData[2].trim() : '';
-
-                    // Opsi B: Contoh gambar dummy (Ganti bagian ini sesuai sumber URL gambar Anda)
+                    // 3. Sumber Gambar (Ganti dengan kolom CSV Anda jika ada, misal rowData[3])
                     const imageUrl = 'https://picsum.photos/800/600?random=' + i;
 
                     // 4. Buat Kolom Aksi di Paling Kanan
@@ -139,30 +195,34 @@
                 }
 
                 document.getElementById('loading').style.display = 'none';
-                document.getElementById('tabel-data').style.display = 'table';
+                document.getElementById('container-tabel').style.display = 'block';
             })
             .catch(err => {
                 document.getElementById('loading').innerText = 'Gagal memuat data dari Google Sheets.';
                 console.error(err);
             });
 
-        // Fungsi Buka & Tutup Modal
+        // Logika Modal Pop-up
         function openModal(imageSrc) {
             const modal = document.getElementById('imageModal');
             const modalImg = document.getElementById('imgModalTarget');
             modal.style.display = "block";
             modalImg.src = imageSrc;
+            // Cegah scroll pada body saat modal terbuka
+            document.body.style.overflow = "hidden";
         }
 
         function closeModal() {
             document.getElementById('imageModal').style.display = "none";
+            // Kembalikan scroll body
+            document.body.style.overflow = "auto";
         }
 
         // Tutup modal jika area luar gambar diklik
         window.onclick = function(event) {
             const modal = document.getElementById('imageModal');
-            if (event.target === modal) {
-                modal.style.display = "none";
+            if (event.target === modal || event.target.className === 'modal-body') {
+                closeModal();
             }
         }
     </script>
